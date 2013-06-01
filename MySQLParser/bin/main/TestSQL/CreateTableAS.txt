@@ -1,0 +1,143 @@
+/*
+ * 安居客手拉手日报
+ * dw_ajk_pprops_daily_sd
+ * 2011-9-7 add by zlhong
+ */
+
+/* begin */
+/* drop tmp table */
+drop table if exists ${dw_stage_anjuke}.tmp_dw_ajk_pprops_daily_sd_1;
+drop table if exists ${dw_stage_anjuke}.tmp_dw_ajk_pprops_daily_sd_2;
+drop table if exists ${dw_stage_anjuke}.tmp_dw_ajk_pprops_daily_sd_3;
+drop table if exists ${dw_stage_anjuke}.tmp_dw_ajk_pprops_daily_sd_4;
+drop table if exists ${dw_stage_anjuke}.tmp_dw_ajk_pprops_daily_sd_5;
+drop table if exists ${dw_stage_anjuke}.tmp_dw_ajk_pprops_daily_sd_6;
+drop table if exists ${dw_stage_anjuke}.tmp_dw_ajk_pprops_daily_sd_7;
+
+/* create ${dw_stage_anjuke}.tmp_dw_ajk_pprops_daily_sd_1 */
+create table ${dw_stage_anjuke}.tmp_dw_ajk_pprops_daily_sd_1 as 
+select 
+a.log_dt,a.city_id,
+count(case when a.url like '%prop/viewyz%' then 1 end) vppv_total,
+count(distinct case when a.url like '%prop/viewyz%' then a.guid end) vpuv_total,
+count(distinct case when a.url like '%tg9%' and a.page_id=44 then a.guid end) uv_list,
+count(case when a.url like '%prop/viewyz%' and  (a.referral like '%anjuke.com/sale/%' or a.referral like '%anjuke.com/v2/sale/%') 
+			and a.referral like '%tg%' then 1 end) vppv_from_list,
+count(case when a.url like '%prop/viewyz%' and 
+		 (a.referral like '%anjuke.com/sale/%' or 
+			a.referral like '%anjuke.com/v2/sale/%') 
+			and a.referral not like '%tg%' then 1 end) vppv_from_listptab,
+count(case when a.url like '%prop/viewyz%' 
+			and a.referral like '%anjuke.com/%owner/%' 
+			then 1 end) vppv_from_owner,
+count(distinct case when a.url like '%my.anjuke.com%/member/own/property/W0QQactZproadd%' 
+			then a.guid end) uv_fabu,
+count(distinct case when a.url like '%my.anjuke.com%/member/payconfirm/W0QQproid%' 
+			then a.guid end) uv_queren,
+count(distinct case when a.url like '%my.anjuke.com%/acenter/account/%ap=1%' 
+			then a.guid end) uv_zhifu,
+count(distinct case when page_id=633 then guid end) uv_choose 
+from ${dw_db_public}.${sojTable} a 
+where a.log_dt = ? 
+group by a.city_id;
+
+/* create ${dw_stage_anjuke}.tmp_dw_ajk_pprops_daily_sd_2 */
+create table ${dw_stage_anjuke}.tmp_dw_ajk_pprops_daily_sd_2 as
+select 
+c.city_id,count(*) calls 
+from ${dw_db_anjuke}.dw_hz_phone_result a
+join ${dw_db_anjuke}.dw_ajk_pphone_map b on a.to_phone=b.ext_num
+join ${dw_db_anjuke}.dw_ajk_pprops_sale c on b.pro_id=c.pro_id
+where date(FROM_UNIXTIME(a.call_datetime)) = ? 
+and b.status=1 and c.pro_status=2
+group by c.city_id;
+
+/* create ${dw_stage_anjuke}.tmp_dw_ajk_pprops_daily_sd_3 */
+create table ${dw_stage_anjuke}.tmp_dw_ajk_pprops_daily_sd_3 as 
+select a.city_id,
+count(distinct a.Account_Id) uv_succ,
+sum(a.Amount/100) revenue
+from ${dw_db_anjuke}.dw_ajk_payment a
+where a.status = 2
+and a.create_dt = ? 
+and a.App_Id = 125
+and a.Amount >100
+group by a.city_id;
+
+/* create ${dw_stage_anjuke}.tmp_dw_ajk_pprops_daily_sd_4 */
+create table ${dw_stage_anjuke}.tmp_dw_ajk_pprops_daily_sd_4 as 
+select a.city_id,
+sum(a.Amount/100) revenue_month 
+from ${dw_db_anjuke}.dw_ajk_payment a
+where a.status = 2
+and a.create_dt >= CONCAT(year(?),'-',month(?),'-','01') 
+and a.create_dt <= ? 
+and a.App_Id = 125
+and a.Amount >100
+group by a.city_id;
+
+/* create ${dw_stage_anjuke}.tmp_dw_ajk_pprops_daily_sd_5 */
+create table ${dw_stage_anjuke}.tmp_dw_ajk_pprops_daily_sd_5 as 
+select a.city_id,
+sum(a.Amount/100) revenue_year
+from ${dw_db_anjuke}.dw_ajk_payment a
+where a.status = 2 
+and a.create_dt >= CONCAT(year(?),'-','01','-','01') 
+and a.create_dt <= ? 
+and a.App_Id = 125
+and a.Amount >100
+group by a.city_id;
+
+/* create ${dw_stage_anjuke}.tmp_dw_ajk_pprops_daily_sd_6 */
+create table ${dw_stage_anjuke}.tmp_dw_ajk_pprops_daily_sd_6 as 
+select city_id,
+count(distinct case when create_dt=? then Product_Id end) new_owner_prop 
+from ${dw_db_anjuke}.dw_ajk_payment 
+group by city_id;
+
+/* create ${dw_stage_anjuke}.tmp_dw_ajk_pprops_daily_sd_7 */
+create table ${dw_stage_anjuke}.tmp_dw_ajk_pprops_daily_sd_7 as 
+select City_Id,
+count(distinct case when pro_status=2 then pro_id end) live_owner_prop 
+from ${dw_db_anjuke}.dw_ajk_pprops_sale 
+group by City_Id;
+
+/* main sql */
+/* delete old record */
+delete from ${dw_db_anjuke}.dw_ajk_pprops_daily_sd
+where cal_dt = ?;
+
+/* insert new record */
+insert into ${dw_db_anjuke}.dw_ajk_pprops_daily_sd 
+select ?,
+a.city_id,a.vppv_total,a.vpuv_total,
+a.uv_list,a.vppv_from_list,a.vppv_from_listptab,
+a.vppv_from_owner,f.new_owner_prop,g.live_owner_prop,ifnull(b.calls,0),a.uv_choose,
+a.uv_fabu,a.uv_queren,a.uv_zhifu,
+ifnull(c.uv_succ,0),ifnull(c.revenue,0),
+ifnull(d.revenue_month,0),ifnull(e.revenue_year,0) 
+from ${dw_stage_anjuke}.tmp_dw_ajk_pprops_daily_sd_1 a 
+join dw_db.dw_citytype_lkp a1 on a.city_id=a1.city_id
+left join ${dw_stage_anjuke}.tmp_dw_ajk_pprops_daily_sd_2 b
+on a.city_id = b.city_id 
+left join ${dw_stage_anjuke}.tmp_dw_ajk_pprops_daily_sd_3 c
+on a.city_id = c.city_id
+left join ${dw_stage_anjuke}.tmp_dw_ajk_pprops_daily_sd_4 d
+on a.city_id = d.city_id
+left join ${dw_stage_anjuke}.tmp_dw_ajk_pprops_daily_sd_5 e
+on a.city_id = e.city_id
+left join ${dw_stage_anjuke}.tmp_dw_ajk_pprops_daily_sd_6 f 
+on a.city_id = f.city_id 
+left join ${dw_stage_anjuke}.tmp_dw_ajk_pprops_daily_sd_7 g 
+on a.city_id = g.city_id;
+
+/* drop tmp table */
+drop table if exists ${dw_stage_anjuke}.tmp_dw_ajk_pprops_daily_sd_1;
+drop table if exists ${dw_stage_anjuke}.tmp_dw_ajk_pprops_daily_sd_2;
+drop table if exists ${dw_stage_anjuke}.tmp_dw_ajk_pprops_daily_sd_3;
+drop table if exists ${dw_stage_anjuke}.tmp_dw_ajk_pprops_daily_sd_4;
+drop table if exists ${dw_stage_anjuke}.tmp_dw_ajk_pprops_daily_sd_5;
+drop table if exists ${dw_stage_anjuke}.tmp_dw_ajk_pprops_daily_sd_6;
+drop table if exists ${dw_stage_anjuke}.tmp_dw_ajk_pprops_daily_sd_7;
+
+/* end */
