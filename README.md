@@ -1,4 +1,6 @@
 analySQLTables
 ==============
 
-analize table reference in given SQL blocks sequentially
+Analize table dependency in given SQL blocks sequentially.
+This can be used to determin table influence.
+
