@@ -104,16 +104,19 @@ public final class Parser {
 		Matcher m = p.matcher(sql);
 		if(m.matches()){
 			String targetTableAlias = m.group(2);
-			String selectSQL = m.group(1).replaceAll("(?i)\\s*UPDATE\\s+","SELECT * FROM "); //replace UPDATE with SELECT * FROM ,so we can use SelectSQL to analy used tables
+			String selectSQL = m.group(1).replaceAll("(?i)\\s*UPDATE\\s+","SELECT * FROM "); //replace UPDATE with SELECT * FROM ,so we can use SelectSQL to analyze used tables
 			String targetTable = "";
 			
 			SelectSQL sel = new SelectSQL(selectSQL);
 			sel.formatSQL();
 			sel.createChilds();
 			
+			System.out.println(targetTableAlias);
+			
 			//find real table name if targetTableAlias is just alias
 			if(sel.getSimpleSubTree().indexOf(targetTableAlias) == -1){
-				p = Pattern.compile("(?i).*?((\\w+\\.)?\\w+)\\s+(?:AS\\s+)?"+targetTableAlias+".*");
+				//p = Pattern.compile("(?i).*?((\\w+\\.)?\\w+)\\s+(?:AS\\s+)?"+targetTableAlias+".*");
+				p = Pattern.compile("(?i).*?(?:\\s|,)([^\\s]*)\\s+(?:AS\\s+)?"+targetTableAlias+"(\\s|,).*");
 				m = p.matcher(selectSQL);
 				if(m.matches()){
 					targetTable = m.group(1);

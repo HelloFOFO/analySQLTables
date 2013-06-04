@@ -19,7 +19,7 @@ public class MySQLParser {
 	private static ArrayList<String> sqlFileList = new ArrayList<String>() ;
 		
 	public static void main(String[] args) {
-		goProd();
+		//goProd();
 		goTest();
 	}
 	
