@@ -23,7 +23,7 @@ public class SelectSQL {
 	private String rawSQL = "";
 	private String formattedSQL = "";
 
-	//ArrayList<String> of index pari of start and end of each sub query, for example : 5,30 |45,79
+	//ArrayList<String> of index pair of start and end of each sub query, for example : 5,30 |45,79
 	private ArrayList<String> subQueryPos = new ArrayList<String>();	
 
 	private int indexOfTables = -1; 				//index of where first table occurs 
@@ -143,7 +143,7 @@ public class SelectSQL {
 					}
 				}
 				else{
-					refTableList.add(shortSQL);
+					refTableList.add(shortSQL.trim().split("\\s")[0]);
 				}
 			}
 		}
@@ -154,7 +154,6 @@ public class SelectSQL {
 		System.out.println(this.getSubTree().toString());
 		System.out.println("---------------------");
 		System.out.println(this.getSimpleSubTree().toString());
-		
 	}
 	
 	public ArrayList<String> getSubTree(){
@@ -198,10 +197,10 @@ public class SelectSQL {
 		int begin = 0,end = 0;
 		int num = 0;
 		sql = this.rawSQL.toUpperCase();
-		if(sql.indexOf(" FROM")>-1){
+		if(sql.indexOf(" FROM ")>-1){
 			this.isValid = true;
-			this.indexOfTables = sql.indexOf(" FROM")+5; 
-			i = sql.indexOf(" FROM")+5;
+			this.indexOfTables = sql.indexOf(" FROM ")+6; 
+			i = sql.indexOf(" FROM ")+6;
 			while(i<sql.length()){
 				if(sql.charAt(i) == '('){
 					this.hasSubQuery = true;
@@ -263,13 +262,17 @@ public class SelectSQL {
 	 * 4. delete from last "WHERE","GROUP BY" and "ORDER BY"
 	 */
 	private String clearRawSQL(String sql){
-		String newSQL = sql.replaceAll("(\\/\\*.*\\*\\/)?", "").replaceAll("\\s+", " "); 
+		//delete comments
+		//replace multiple spaces with one space
+		//replace "from(" with "from (" to separate with from* functions
+		String newSQL = sql.replaceAll("(\\/\\*.*\\*\\/)?", "").replaceAll("\\s+", " ").replaceAll("(?i)from\\(", "from ("); 
 		
 		//System.out.println("newSQL here is : "+newSQL);
 		
-		// replace "union" with ") a,("
+		// ,replace "union" with ") a,("
 		// ,add "SELECT for_union FROM ( SELECT" at the beginning
 		// ,add ") b" at the end
+		
 
 		if(newSQL.toUpperCase().indexOf(" UNION ") > 0 ){
 			String firstQuery = newSQL.substring(0,newSQL.toUpperCase().indexOf(" UNION "));
@@ -313,6 +316,19 @@ public class SelectSQL {
 				indexOfDelete = newSQL.toUpperCase().indexOf("ORDER BY",indexOfDelete+8);
 			}
 		}
+		
+		indexOfDelete = newSQL.toUpperCase().indexOf("ON DUPLICATE KEY UPDATE");
+		while(indexOfDelete > -1)
+		{
+			if(Parser.checkDoubleBracket(newSQL.substring(indexOfDelete))){
+				newSQL = newSQL.substring(0,indexOfDelete);
+				break;
+			}
+			else{
+				indexOfDelete = newSQL.toUpperCase().indexOf("ON DUPLICATE KEY UPDATE",indexOfDelete+8);
+			}
+		}
+		
 		return newSQL;
 	}
 		

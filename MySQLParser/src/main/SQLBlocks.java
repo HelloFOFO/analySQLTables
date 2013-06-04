@@ -17,7 +17,10 @@ public class SQLBlocks {
 	}
 	
 	private void clearSQL(){
-		sqlStatements = sqlStatements.replaceAll("(\\/\\*.*?\\*\\/)?", "").replaceAll("\\s+", " "); 
+		//delete comments
+		//replace multiple spaces with one space
+		//replace "overwrite table" with "into" to be compatible with Hive QL
+		sqlStatements = sqlStatements.replaceAll("(\\/\\*.*?\\*\\/)?", "").replaceAll("\\s+", " ").replaceAll("(?i)overwrite\\s+table", "into"); 
 		
 		for(String sql : sqlStatements.split(";")){
 			if(!Parser.testSQLType(sql).equals("")){

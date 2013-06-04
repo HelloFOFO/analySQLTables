@@ -12,10 +12,10 @@ public final class Parser {
 	public static String PAT_CREATE_TABLE_AS = "(?i)\\s*CREATE\\s+TABLE\\s+(\\S*)\\s+(?:AS)?(.*)";
 	public static String SQLTYPE_CREATE_TABLE_AS = "CREATE_TABLE_AS";
 	
-	public static String PAT_INSERT_INTO = "(?i)\\s*INSERT\\s+(?:IGNORE\\s+)?(INTO\\s+)?((?:\\w+\\.)?\\w+).*?(SELECT.*)";
+	public static String PAT_INSERT_INTO = "(?i)\\s*INSERT\\s+(?:IGNORE\\s+)?(?:INTO\\s+)?(.*?)(?:\\(.*?\\))?\\s+(SELECT.*)";
 	public static String SQLTYPE_INSERT_INTO = "INSERT_INTO";
 	
-	public static String PAT_LOAD_DATA_INFILE = "(?i)\\s*LOAD\\s+DATA\\s+(?:LOCAL\\s+)?INFILE\\s+(.*?)\\s+INTO\\s+TABLE\\s+(.*?)(\\s+.*)?";	
+	public static String PAT_LOAD_DATA_INFILE = "(?i)\\s*LOAD\\s+DATA\\s+(?:LOCAL\\s+)?(?:INFILE|INPATH)\\s+(.*?)\\s+(?:OVERWRITE\\s+)?INTO\\s+TABLE\\s+(.*?)(?:\\s+.*)?";	
 	public static String SQLTYPE_LOAD_DATA_INFILE = "LOAD_DATA_INFILE";
 	
 	public static String PAT_UPDATE = "(?i)\\s*UPDATE\\s+.*";
@@ -166,14 +166,15 @@ public final class Parser {
 		Pattern p = Pattern.compile(Parser.PAT_INSERT_INTO);
 		Matcher m = p.matcher(sql);
 		if(m.matches()){
-			String target = m.group(2);
-			String sourceSQL = m.group(3);
+			String target = m.group(1).split("\\s")[0];
+			String sourceSQL = m.group(2);
 			
 			SelectSQL sel = new SelectSQL(sourceSQL);
 			sel.formatSQL();
 			sel.createChilds();
 			
 			//System.out.println("Target is : "+target);
+			//System.out.println("sourceSQL is : "+sourceSQL);
 			//System.out.println("Source is : "+sel.getSimpleSubTree());
 			
 			for(String sourceTable : sel.getSimpleSubTree()){
