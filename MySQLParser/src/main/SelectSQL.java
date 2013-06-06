@@ -232,6 +232,8 @@ public class SelectSQL {
 					}
 				}
 				else{
+					i++;
+					/*
 					if(sql.charAt(i) == ' '){						
 						i++;
 					}
@@ -244,6 +246,7 @@ public class SelectSQL {
 							break;
 						}
 					}
+					*/
 				}
 			}
 		}
@@ -252,6 +255,7 @@ public class SelectSQL {
 	public SelectSQL(String sql){
 		this.rawSQL = clearRawSQL(sql);
 		this.analySubQuery();
+		//System.out.println(rawSQL);
 	}
 	
 	/*
