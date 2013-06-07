@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 
 public final class Parser {
 	
-	public static String PAT_SELECT_INTO_OUTFILE = "(?i)\\s*(SELECT.*)\\s+INTO\\s+OUTFILE\\s+(.*)";
+	public static String PAT_SELECT_INTO_OUTFILE = "(?i)\\s*(SELECT.*)\\s+INTO\\s+OUTFILE\\s+(.*?)(?:\\s+.*)?";
 	public static String SQLTYPE_SELECT_INTO_OUTFILE = "SELECT_INTO_OUTFILE";
 	
 	public static String PAT_CREATE_TABLE_AS = "(?i)\\s*CREATE\\s+TABLE\\s+(\\S*)\\s+(?:AS)?(.*)";
@@ -15,7 +15,7 @@ public final class Parser {
 	public static String PAT_INSERT_INTO = "(?i)\\s*INSERT\\s+(?:IGNORE\\s+)?(?:INTO\\s+)?(.*?)(?:\\(.*?\\))?\\s+(SELECT.*)";
 	public static String SQLTYPE_INSERT_INTO = "INSERT_INTO";
 	
-	public static String PAT_LOAD_DATA_INFILE = "(?i)\\s*LOAD\\s+DATA\\s+(?:LOCAL\\s+)?(?:INFILE|INPATH)\\s+(.*?)\\s+(?:OVERWRITE\\s+)?INTO\\s+TABLE\\s+(.*?)(?:\\s+.*)?";	
+	public static String PAT_LOAD_DATA_INFILE = "(?i)\\s*LOAD\\s+DATA\\s+(?:LOCAL\\s+)?(?:INFILE|INPATH)\\s+(.*?)\\s+(?:OVERWRITE\\s+)?INTO\\s+TABLE\\s+(.*?)(?:(?:\\(|\\s+).*)?";	
 	public static String SQLTYPE_LOAD_DATA_INFILE = "LOAD_DATA_INFILE";
 	
 	public static String PAT_UPDATE = "(?i)\\s*UPDATE\\s+.*";
@@ -111,7 +111,7 @@ public final class Parser {
 			sel.formatSQL();
 			sel.createChilds();
 			
-			System.out.println(targetTableAlias);
+			//System.out.println(targetTableAlias);
 			
 			//find real table name if targetTableAlias is just alias
 			if(sel.getSimpleSubTree().indexOf(targetTableAlias) == -1){
@@ -220,13 +220,14 @@ public final class Parser {
 			SelectSQL sel = new SelectSQL(sourceSQL);
 			sel.formatSQL();
 			sel.createChilds();
+			
 			//System.out.println("formatted sql is : " + sel.getFormattedSQL());
 			
 			for(String sourceTable : sel.getSimpleSubTree()){
 				list.add(target + "|" + sourceTable);
 			}
 		}
-		
+
 		return list;
 	}
 }
